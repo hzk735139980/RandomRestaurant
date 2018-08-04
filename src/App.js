@@ -9,8 +9,12 @@ class App extends Component {
   constructor(props) {
     super(props);
 
+    let localRestaurants = JSON.parse(localStorage.getItem('restaurants'));
+    if(!localRestaurants){
+      localRestaurants = [];
+    }
     this.state = {
-      restaurantList: [],
+      restaurantList: localRestaurants,
       value: '',
       result: ''
     }
@@ -30,6 +34,7 @@ class App extends Component {
     let tmp = _.compact(input);
     tmp.map(res => list.push(res));
     this.setState({ restaurantList: list });
+    localStorage.setItem('restaurants', JSON.stringify(list));
   }
 
   handleDelete(res) {
@@ -39,6 +44,7 @@ class App extends Component {
       list.splice(index, 1);
     }
     this.setState({ restaurantList: list });
+    localStorage.setItem('restaurants', JSON.stringify(list));
   }
 
   handleRandom() {
