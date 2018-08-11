@@ -33,8 +33,9 @@ class App extends Component {
     let list = this.state.restaurantList;
     let tmp = _.compact(input);
     tmp.map(res => list.push(res));
-    this.setState({ restaurantList: list });
-    localStorage.setItem('restaurants', JSON.stringify(list));
+    let uniqArray = _.uniq(list);
+    this.setState({ restaurantList: uniqArray });
+    localStorage.setItem('restaurants', JSON.stringify(uniqArray));
   }
 
   handleDelete(res) {
