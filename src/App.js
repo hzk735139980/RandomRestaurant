@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { Button, Form, FormGroup, Label, Input, ListGroup, ListGroupItem } from 'reactstrap';
+import { Button, CellsTitle, Form, FormCell, CellBody, TextArea, CellHeader, Checkbox } from 'react-weui';
 import logo from './logo.svg';
 import './App.css';
 import _ from 'lodash';
@@ -10,18 +10,27 @@ class App extends Component {
     super(props);
 
     let localRestaurants = JSON.parse(localStorage.getItem('restaurants'));
-    if(!localRestaurants){
+    let checkedItems = new Map();
+    if (!localRestaurants) {
       localRestaurants = [];
+    } else {
+      localRestaurants.map(res => {
+        return checkedItems.set(res, false);
+      })
     }
+
     this.state = {
       restaurantList: localRestaurants,
       value: '',
-      result: ''
+      result: '',
+      checkedItems: checkedItems
     }
     this.renderList = this.renderList.bind(this);
     this.handleInput = this.handleInput.bind(this);
     this.handleAdd = this.handleAdd.bind(this);
     this.handleRandom = this.handleRandom.bind(this);
+    this.handleChange = this.handleChange.bind(this);
+    this.handleDelete = this.handleDelete.bind(this);
   }
 
   handleInput(e) {
@@ -32,18 +41,33 @@ class App extends Component {
     let input = this.state.value.split(/,|，/);
     let list = this.state.restaurantList;
     let tmp = _.compact(input);
-    tmp.map(res => list.push(res));
+    tmp.map(res => {
+      if (!this.state.checkedItems.has(res)) {
+        this.setState(prevState => ({ checkedItems: prevState.checkedItems.set(res, false) }));
+      }
+      return list.push(res);
+    });
     let uniqArray = _.uniq(list);
     this.setState({ restaurantList: uniqArray });
     localStorage.setItem('restaurants', JSON.stringify(uniqArray));
   }
 
-  handleDelete(res) {
+  handleDelete() {
     let list = this.state.restaurantList;
-    const index = list.indexOf(res);
-    if (index !== -1) {
-      list.splice(index, 1);
-    }
+    this.state.checkedItems.forEach((value, key, map)=>{
+      if(value){ 
+        if (list.indexOf(key) !== -1) {
+          list.splice(list.indexOf(key), 1);
+        }
+        this.state.checkedItems.delete(key);
+      }
+    });
+    // let list = this.state.restaurantList;
+    // const index = list.indexOf(res);
+    // if (index !== -1) {
+    //   list.splice(index, 1);
+    // }
+    // console.log(this.state);
     this.setState({ restaurantList: list });
     localStorage.setItem('restaurants', JSON.stringify(list));
   }
@@ -54,13 +78,25 @@ class App extends Component {
     this.setState({ result: rand });
   }
 
+  handleChange(e) {
+    const item = e.target.name;
+    const isChecked = e.target.checked;
+    this.setState(prevState => ({ checkedItems: prevState.checkedItems.set(item, isChecked) }));
+  }
+
   renderList() {
     return this.state.restaurantList.map((res, index) =>
-      <ListGroupItem key={index} onClick={() => { this.handleDelete(res) }}>{res}</ListGroupItem>
+      <FormCell checkbox style={{ margin: '0' }} key={index}>
+        <CellHeader>
+          <Checkbox name={res} checked={this.state.checkedItems.get(res)} onChange={this.handleChange} />
+        </CellHeader>
+        <CellBody>{res}</CellBody>
+      </FormCell>
     )
   }
 
   render() {
+    console.log(this.state);
     return (
       <div className="App">
         <header className="App-header">
@@ -68,22 +104,25 @@ class App extends Component {
           <h1 className="App-title">Welcome to Random Restaurant Picker</h1>
         </header>
         <main className="main-body">
+          <CellsTitle>Add restaurants that you want:</CellsTitle>
           <Form>
-            <FormGroup>
-              <Label for="exampleEmail" style={{ float: 'left', marginLeft: '20px' }}>add restaurants that you want:</Label>
-              <Input style={{ width: '90%', margin: '0 auto' }} type="text" name="restaurants" placeholder="Example: pho, fengming"
-                value={this.state.value} onChange={this.handleInput} />
-            </FormGroup>
-            <Button className="button" onClick={() => { this.handleAdd() }}>Add</Button>
+            <FormCell>
+              <CellBody>
+                <TextArea placeholder="Example: pho, fengming" rows="2" showCounter={false} value={this.state.value} onChange={this.handleInput}></TextArea>
+              </CellBody>
+            </FormCell>
           </Form>
+          <Button type='default' plain style={{ width: '90%', marginTop: '2vw' }} onClick={this.handleAdd}>Add</Button>
           {this.state.restaurantList.length > 0 ?
             <div>
-              <ListGroup className="list">
+              <CellsTitle>Restaurant:</CellsTitle>
+              <Form checkbox>
                 {this.renderList()}
-              </ListGroup>
-              <Button className="button" onClick={() => { this.handleRandom() }}>Random Pick</Button>
+              </Form>
+              <Button type='default' plain style={{ width: '90%', marginTop: '2vw' }} onClick={this.handleDelete}>Delete Selected Restaurants</Button>
+              <Button type='default' plain style={{ width: '90%' }} onClick={this.handleRandom}>Random Pick</Button>
+              <h2 style={{ textAlign: 'center' }}>Choice: {this.state.result ? this.state.result : '?'}</h2>
             </div> : ''}
-          {this.state.result ? <h2>Choice: {this.state.result}</h2> : ''}
         </main>
       </div>
     );
